@@ -8,8 +8,8 @@ using namespace std;
 // g++ main.cpp -o main
 // 
 
-const double DEBIT_TOTAL = 578.005676269531;
-const double NIVEAU_AMONT = 137.899993896484; 
+// const double DEBIT_TOTAL = 578.005676269531;
+// const double NIVEAU_AMONT = 137.899993896484; 
 
 // const double MIN_DEBIT = 0.0; // Débit minimal admissible
 // const double MAX_DEBIT = 160.0; // Débit maximal admissible
@@ -25,7 +25,7 @@ const double COEFFICIENTS_TURBINE_4[8] = {20.2212, -0.45860, -0.57770, 0.0048860
 const double COEFFICIENTS_TURBINE_5[8] = {1.97860, 0.004009, -0.05699, 0.00106400,0.00545600, 0, -8.1620e-06, 2.8490e-05}; // TURBINE 5
 
 
-double getChuteNette(double debit_turbine) {
+double getChuteNette(double debit_turbine, double NIVEAU_AMONT, double DEBIT_TOTAL) {
     // Déterminer l'élévation avale en fonction du débit total
     double elevation_avale = COEFFICIENTS_ELEV_AVAL[0] * pow(DEBIT_TOTAL, 2) +
                              COEFFICIENTS_ELEV_AVAL[1] * DEBIT_TOTAL +
@@ -54,18 +54,26 @@ double powerFunction(double debit_turbine, double chute_nette, const double* coe
 
 
 int main(int argc, char **argv) {
+
+    double DEBIT_TOTAL = 578.005676269531; // valeur par défault
+    double NIVEAU_AMONT = 137.899993896484;  // valeur par défault
+    double test_debit = 0.0;
+
     double puissance_totale = 1e20;
     double x[5];
     double sum_debits = 1e20;
-    if (argc >= 2) {
-        ifstream in(argv[1]);
+    if (argc == 4) {
+        DEBIT_TOTAL = atof(argv[1]);
+        NIVEAU_AMONT = atof(argv[2]);
+
+        ifstream in(argv[3]);
         double ttl = 0.0;
         sum_debits = 0.0;
         for (int i = 0; i < 5; i++) {
             in >> x[i];
             double debit_turbine = x[i];
             sum_debits += debit_turbine;
-            double chute_nette = getChuteNette(debit_turbine);
+            double chute_nette = getChuteNette(debit_turbine, NIVEAU_AMONT, DEBIT_TOTAL);
             // std::cout << "turbine " << i+1 << " : "<< debit_turbine << " m^3/s"<< std::endl;
             // std::cout << "chute nette : " << chute_nette << " m" << std::endl;
             const double* coefficients;

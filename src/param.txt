@@ -1,7 +1,7 @@
 DIMENSION      5              # number of variables (turbines)
 
-BB_EXE         main.exe         # 'bb.exe' is a program that  
-BB_OUTPUT_TYPE OBJ            # takes in argument the name of  
+BB_EXE         "$main.exe $578.005676269531 $137.899993896484"         # 'bb.exe' is a program that  
+BB_OUTPUT_TYPE OBJ  EB          # takes in argument the name of  
                               # a text file containing 5  
                               # values, and that displays 3  
                               # values that correspond to the  
