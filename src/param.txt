@@ -1,7 +1,7 @@
 DIMENSION      5              # number of variables (turbines)
 
-BB_EXE         "$main.exe $578.005676269531 $137.899993896484"         # 'bb.exe' is a program that  
-BB_OUTPUT_TYPE OBJ  EB          # takes in argument the name of  
+BB_EXE         "$C:\Users\basil\Documents\Work\UQAC\S2\Atelier_en_optimisation\TP\IV_Projet_2\src\main.exe $569.6387939453125 $137.8800048828125"
+BB_OUTPUT_TYPE OBJ           # takes in argument the name of  
                               # a text file containing 5  
                               # values, and that displays 3  
                               # values that correspond to the  
@@ -19,7 +19,7 @@ BB_OUTPUT_TYPE OBJ  EB          # takes in argument the name of
 X0             ( 0 0 0 0 0)  # starting point (replace with actual starting values)
 
 LOWER_BOUND    * 0           # MIN_DEBIT
-UPPER_BOUND    * 160         # MAX_DEBIT 
+UPPER_BOUND	( 160 160 0 160 160 )
 
 MAX_BB_EVAL    200            # the algorithm terminates when  
                               # 200 black-box evaluations have  
