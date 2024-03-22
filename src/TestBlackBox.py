@@ -96,7 +96,6 @@ class TestBlackBox:
             exit(1) 
         ttl_time = time() - start
         numbers = self.getSolutionsFromOutput(output)
-        print(type(numbers))
         return ttl_time, numbers
     
     def initialize_result_df(self, df_file_row: pd.Series) -> None:
