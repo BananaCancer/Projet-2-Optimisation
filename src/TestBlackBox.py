@@ -3,7 +3,7 @@ import subprocess
 import re
 from time import time
 import os
-from typing import Union
+from typing import Union, List, Tuple
 MIN_DEBIT = 0
 MAX_DEBIT = 160
 
@@ -32,14 +32,19 @@ ARRAY_COEFFICIENTS_TURBINES = [puissance_turbine_1, puissance_turbine_2,
 
 class TestBlackBox:
 
-    def __init__(self, debit_total, niveau_amont, active_turbines, df_file_row: pd.Series) -> None:
+    def __init__(self, 
+                 debit_total: float, 
+                 niveau_amont: float, 
+                 active_turbines: List[bool], 
+                 df_file_row: pd.Series) -> None:
         self.debit_total = debit_total
         self.niveau_amont = niveau_amont
         self.active_turbines = active_turbines
         self.prepareParamFile()
         self.initialize_result_df(df_file_row)
 
-    def getChuteNette(self, debit_turbine: Union[int,float]) -> Union[int,float]:
+    def getChuteNette(self, 
+                      debit_turbine: Union[int,float]) -> Union[int,float]:
         # Vérifier si le débit est dans la plage admissible
         if debit_turbine < MIN_DEBIT or debit_turbine > MAX_DEBIT:
             raise ValueError(f"Le débit doit être compris entre {MIN_DEBIT} et {MAX_DEBIT} m³/s. now is more {debit_turbine}")
@@ -54,7 +59,9 @@ class TestBlackBox:
 
         return chute_nette
 
-    def powerFunction(self, debit_turbine: Union[int,float], chute_nette,
+    def powerFunction(self, 
+                      debit_turbine: Union[int,float], 
+                      chute_nette: float,
                       coefficients: list):
         return coefficients[0] + \
             coefficients[1] * debit_turbine +\
@@ -70,7 +77,8 @@ class TestBlackBox:
         dfResult.loc[:, "Puissance totale"] = 0
         return dfResult
     
-    def getSolutionsFromOutput(self, output):
+    def getSolutionsFromOutput(self, 
+                               output: bytes):
         match = re.search(r'best feasible solution.*', output.decode("utf-8"), re.DOTALL)
         if match:
             numbers = re.findall(r'-?\d+\.?\d*', match.group(0))
@@ -78,16 +86,17 @@ class TestBlackBox:
         else:
             return None
         
-    def runNomad(self):
+    def runNomad(self) -> Tuple[float, list[float]]:
         cmd = ['nomad.exe', 'src/param.txt']
         start = time()
         try:
             output = subprocess.Popen( cmd, stdout=subprocess.PIPE ).communicate()[0]
         except:
             print("nomad.exe not found. Make sure it's in the PATH ")
-            exit(1)
+            exit(1) 
         ttl_time = time() - start
         numbers = self.getSolutionsFromOutput(output)
+        print(type(numbers))
         return ttl_time, numbers
     
     def initialize_result_df(self, df_file_row: pd.Series) -> None:
@@ -106,8 +115,8 @@ class TestBlackBox:
 
         self.df_result.at["Original", "Puissance totale"] = puissance_totale
 
-    def prepareParamFile(self, exe_path = "src/main.exe", 
-                         file_name = "src/param.txt") -> None:
+    def prepareParamFile(self, exe_path: str = "src/main.exe", 
+                         file_name: str = "src/param.txt") -> None:
         abs_path_exe = os.path.abspath(exe_path)
         with open(file_name,'r',encoding='utf-8') as file:
             data = file.readlines()
@@ -123,7 +132,7 @@ class TestBlackBox:
         with open(file_name, 'w', encoding='utf-8') as file:
             file.writelines(data)
 
-    def processResults(self, results):
+    def processResults(self, results: list[float]) -> None:
         for i in range(5):
             colNameDebit = "Débit T" + str(i+1)
             colNamePuissance = "Puissance T" + str(i+1)
@@ -138,10 +147,10 @@ class TestBlackBox:
             self.df_result.loc["Computed", colNamePuissance] = currentPuissance
             self.df_result.loc["Computed", "Puissance totale"] = - float(results[-1])
 
-    def run(self):
-        ttl_time, results = self.runNomad()
-        self.processResults(results)
-        return ttl_time
+    def run(self) -> float:
+        result = self.runNomad()
+        self.processResults(result[1])
+        return result[0]
     
     def printResults(self) -> None:
         print(self.df_result)
