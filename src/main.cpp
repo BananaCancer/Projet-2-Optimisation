@@ -6,13 +6,6 @@
 using namespace std;
 
 // g++ main.cpp -o main
-// 
-
-// const double DEBIT_TOTAL = 578.005676269531;
-// const double NIVEAU_AMONT = 137.899993896484; 
-
-// const double MIN_DEBIT = 0.0; // Débit minimal admissible
-// const double MAX_DEBIT = 160.0; // Débit maximal admissible
 
 
 const double COEFFICIENTS_ELEV_AVAL[3] = {-1.453e-06, 0.007022, 99.9812}; // Coefficients pour calculer l'élévation aval
@@ -24,23 +17,42 @@ const double COEFFICIENTS_TURBINE_3[8] = {0.77990,  0.19950, -0.02261, -3.519e-0
 const double COEFFICIENTS_TURBINE_4[8] = {20.2212, -0.45860, -0.57770, 0.00488600, 0.0115100, 0, -1.8820e-05, 1.3790e-05}; // TURBINE 4
 const double COEFFICIENTS_TURBINE_5[8] = {1.97860, 0.004009, -0.05699, 0.00106400,0.00545600, 0, -8.1620e-06, 2.8490e-05}; // TURBINE 5
 
+const double* COEFFICIENTS_TURBINES[5] = {COEFFICIENTS_TURBINE_1,
+COEFFICIENTS_TURBINE_2, COEFFICIENTS_TURBINE_3, COEFFICIENTS_TURBINE_4,
+COEFFICIENTS_TURBINE_5};
 
-double getChuteNette(double debit_turbine, double NIVEAU_AMONT, double DEBIT_TOTAL) {
+/**
+ * @brief Calcule la hauteur de chute nette en fonction du débit de la turbine, 
+ * du débit total et du niveau amont
+ * 
+ * @param debit_turbine Le débit de la turbine
+ * @param niveau_amont Le nivea amont de l'eau
+ * @param debit_total Le débit total disponible
+ * @return double La hauteur de chute nette pour la turbine
+ */
+double getChuteNette(double debit_turbine, double niveau_amont, double debit_total) {
     // Déterminer l'élévation avale en fonction du débit total
-    double elevation_avale = COEFFICIENTS_ELEV_AVAL[0] * pow(DEBIT_TOTAL, 2) +
-                             COEFFICIENTS_ELEV_AVAL[1] * DEBIT_TOTAL +
+    double elevation_avale = COEFFICIENTS_ELEV_AVAL[0] * pow(debit_total, 2) +
+                             COEFFICIENTS_ELEV_AVAL[1] * debit_total +
                              COEFFICIENTS_ELEV_AVAL[2];
 
     // Calculer la chute nette
-    double chute_nette = NIVEAU_AMONT - elevation_avale - (0.5 * pow(10, -5) * pow(debit_turbine, 2));
+    double chute_nette = niveau_amont - elevation_avale - (0.5 * pow(10, -5) * pow(debit_turbine, 2));
 
     return chute_nette;
 }
 
-
-
+/**
+ * @brief Calcule la puissance générée par la turbine en utilisant les 
+ * coefficients fournis
+ * 
+ * @param debit_turbine Débit de la turbine
+ * @param chute_nette Hauteur de chute nette
+ * @param coefficients Coefficients de la fonction de modélisation pour 
+ * calculer la puissance.
+ * @return double La puissance générée par la turbine
+ */
 double powerFunction(double debit_turbine, double chute_nette, const double* coefficients) {
-    // Calcul de la puissance en utilisant les coefficients fournis
     return coefficients[0] +
            coefficients[1] * debit_turbine +
            coefficients[2] * chute_nette +
@@ -54,64 +66,48 @@ double powerFunction(double debit_turbine, double chute_nette, const double* coe
 
 
 int main(int argc, char **argv) {
+    // Données input
+    double debit_total;
+    double niveau_amont;
 
-    double DEBIT_TOTAL = 578.005676269531; // valeur par défault
-    double NIVEAU_AMONT = 137.899993896484;  // valeur par défault
-    double test_debit = 0.0;
-
+    // Initialisation des variables de décisions
     double puissance_totale = 1e20;
-    double x[5];
     double sum_debits = 1e20;
-    if (argc == 4) {
-        DEBIT_TOTAL = atof(argv[1]);
-        NIVEAU_AMONT = atof(argv[2]);
 
+    if (argc == 4) {
+        // Récupération des données input
+        debit_total = atof(argv[1]);
+        niveau_amont = atof(argv[2]);
+
+        // Boucle pour récupérer les débits par turbines et calculer la 
+        // puissance associée
         ifstream in(argv[3]);
         double ttl = 0.0;
         sum_debits = 0.0;
+        double debit_actuel;
         for (int i = 0; i < 5; i++) {
-            in >> x[i];
-            double debit_turbine = x[i];
-            sum_debits += debit_turbine;
-            double chute_nette = getChuteNette(debit_turbine, NIVEAU_AMONT, DEBIT_TOTAL);
-            // std::cout << "turbine " << i+1 << " : "<< debit_turbine << " m^3/s"<< std::endl;
-            // std::cout << "chute nette : " << chute_nette << " m" << std::endl;
-            const double* coefficients;
-            switch (i) {
-                case 0:
-                    coefficients = COEFFICIENTS_TURBINE_1;
-                    break;
-                case 1:
-                    coefficients = COEFFICIENTS_TURBINE_2;
-                    break;
-                case 2:
-                    coefficients = COEFFICIENTS_TURBINE_3;
-                    break;
-                case 3:
-                    coefficients = COEFFICIENTS_TURBINE_4;
-                    break;
-                case 4:
-                    coefficients = COEFFICIENTS_TURBINE_5;
-                    break;
-                default:
-                    break;
-            }
-            double puissance_turbine = powerFunction(debit_turbine, chute_nette, coefficients);
-            // std::cout << "puissance : " << puissance_turbine << " MW" << std::endl;
+            in >> debit_actuel;
+            sum_debits += debit_actuel;
+            double chute_nette = getChuteNette(debit_actuel, niveau_amont, debit_total);
+            double puissance_turbine = powerFunction(debit_actuel, chute_nette, COEFFICIENTS_TURBINES[i]);
             ttl += puissance_turbine;
         }
+
+        //On met la puissance en valeur négative vu qu'on cherche à minimiser
         puissance_totale = - ttl;
+        
+        //On considère que l'optimisation a échoué si le fichier de paramètres 
+        //n'a pas pu être lu ou si la somme des débits dépasse le débit total 
+        //disponible
         if (in.fail()) {
-            // cout << "FAIL" << endl;
             puissance_totale = sum_debits = 1e20;
         } else {
-            if (sum_debits > DEBIT_TOTAL) {
+            if (sum_debits > debit_total) {
                 puissance_totale = sum_debits = 1e20;
             }
         }
         in.close();
     }
-    // std::cout << "Puissance totale : " << puissance_totale << std::endl;
     std::cout << puissance_totale << " " << sum_debits << std::endl;
     return 0;
 }
