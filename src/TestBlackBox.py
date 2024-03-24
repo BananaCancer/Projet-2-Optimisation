@@ -36,10 +36,12 @@ class TestBlackBox:
                  debit_total: float, 
                  niveau_amont: float, 
                  active_turbines: List[bool], 
-                 df_file_row: pd.Series) -> None:
+                 df_file_row: pd.Series,
+                 nb_iterations: int) -> None:
         self.debit_total = debit_total
         self.niveau_amont = niveau_amont
         self.active_turbines = active_turbines
+        self.nb_iterations = nb_iterations
         self.prepareParamFile()
         self.initialize_result_df(df_file_row)
 
@@ -77,9 +79,27 @@ class TestBlackBox:
         dfResult.loc[:, "Puissance totale"] = 0
         return dfResult
     
+    def getSteps(self, output: str):
+        pattern_end_line = re.compile(r"-\d+\.\d+", re.MULTILINE)
+        pattern_start_line = re.compile(r"^\s*\d+", re.MULTILINE)
+        puissances_str = pattern_end_line.findall(output)
+        iteration_numbers_str = pattern_start_line.findall(output)
+        iteration_numbers = [int(x.strip()) for x in iteration_numbers_str]
+        puissances = [float(puissances_str[0])]
+        curr_it = 1
+        for i in range(2,1001):
+            if curr_it >= len(iteration_numbers):
+                puissances.append(puissances[-1])
+            elif iteration_numbers[curr_it] == i:
+                puissances.append(float(puissances_str[curr_it]))
+                curr_it += 1
+            else:
+                puissances.append(puissances[-1])
+        return puissances
+    
     def getSolutionsFromOutput(self, 
-                               output: bytes):
-        match = re.search(r'best feasible solution.*', output.decode("utf-8"), re.DOTALL)
+                               output: str):
+        match = re.search(r'best feasible solution.*', output, re.DOTALL)
         if match:
             numbers = re.findall(r'-?\d+\.?\d*', match.group(0))
             return numbers
@@ -95,8 +115,10 @@ class TestBlackBox:
             print("nomad.exe not found. Make sure it's in the PATH ")
             exit(1) 
         ttl_time = time() - start
+        output = output.decode("utf-8")
         numbers = self.getSolutionsFromOutput(output)
-        return ttl_time, numbers
+        puissances = self.getSteps(output)
+        return ttl_time, numbers, puissances
     
     def initialize_result_df(self, df_file_row: pd.Series) -> None:
         self.df_result = self.initResultDf()
@@ -120,6 +142,7 @@ class TestBlackBox:
         with open(file_name,'r',encoding='utf-8') as file:
             data = file.readlines()
         data[2] = f"BB_EXE         \"${abs_path_exe} ${self.debit_total} ${self.niveau_amont}\"\n"
+        data[23] = f"MAX_BB_EVAL    {self.nb_iterations}\n"
         str_max_debit = "UPPER_BOUND\t( "
         for turbine in self.active_turbines:
             if turbine:
@@ -149,7 +172,7 @@ class TestBlackBox:
     def run(self) -> float:
         result = self.runNomad()
         self.processResults(result[1])
-        return result[0]
+        return result[0], result[2]
     
     def printResults(self) -> None:
         print(self.df_result)

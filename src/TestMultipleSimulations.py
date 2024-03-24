@@ -1,7 +1,7 @@
 import pandas as pd
 from TestBlackBox import TestBlackBox
 from typing import Iterator, List, Tuple
-from plotFunctions import plot_differences, plot_time
+from plotFunctions import plot_differences, plot_time, plotEvolutionIterations
 import programmationDynamique as progDyn
 import numpy as np
 from time import time
@@ -29,6 +29,7 @@ class TestMultipleSimulations:
             }
         self.row_count = row_count
         self.color = []
+        self.evolutionIterations = []
 
     def get_active_turbines(self, line_index: int) -> List[bool]:
         active_turbines = [True if self.df_file.loc[line_index, f"P{i} (MW)"] else False for i in range(1, 6)]
@@ -64,10 +65,12 @@ class TestMultipleSimulations:
             debit_total, niveau_amont, active_turbines = self.getDataFromExcel(line_index)
 
             bb = TestBlackBox(debit_total, niveau_amont, active_turbines, 
-                    self.df_file.iloc[line_index])
-            self.results["BB"]["time_data"].append(bb.run())
+                    self.df_file.iloc[line_index], 1000)
+            time, puissances = bb.run()
+            self.results["BB"]["time_data"].append(time)
             df_result = bb.df_result
             df_result = df_result.rename(index={'Computed': 'Computed BB'})
+            self.evolutionIterations.append(-np.array(puissances) - df_result.loc["Original", "Puissance totale"])
             if "ProgDyn" in self.simulationTypes:
                 df_resultDyn = self.runProgDyn(debit_total, niveau_amont, line_index)
                 row = df_resultDyn.loc[['Computed']].rename(index={'Computed': 'Computed ProgDyn'})
@@ -108,3 +111,4 @@ class TestMultipleSimulations:
                 else:
                     plot_differences(self.results["BB"]["diff_puissance_puissance_per_turbine_data"][i],
                                  label=f"Turbine {i+1} Power")
+            plotEvolutionIterations(self.evolutionIterations)

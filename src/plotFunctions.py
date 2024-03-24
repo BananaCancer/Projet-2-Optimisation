@@ -56,7 +56,7 @@ def plot_time(data_list, color, prog_dyn_data = None):
       if prog_dyn_data != None:
         plt.plot(np.arange(start, i + 1, 1), prog_dyn_data[start:], color=coldyn)
     else:
-      plt.plot(np.arange(start, i + 1, 1), data_list[start:], label=f"Temps d'exécution pour {prev} turbines (BB)", color=getColor(prev))
+      plt.plot(np.arange(start, i + 1, 1), data_list[start:], label=f"Temps d'exécution pour {prev} turbines (BB)", color=colBB)
       if prog_dyn_data != None:
         plt.plot(np.arange(start, i + 1, 1), prog_dyn_data[start:], label=f"Temps d'exécution (s) pour {prev} turbines (ProgDyn)", color=coldyn)
 
@@ -65,3 +65,12 @@ def plot_time(data_list, color, prog_dyn_data = None):
     plt.title(f"Temps d'exécution en secondes")
     plt.legend()
     plt.show()
+
+def plotEvolutionIterations(evolutionIterations):
+  average_array = np.mean(evolutionIterations, axis=0)
+  plt.plot(average_array)
+  plt.xlabel('Nombre d\itérations')
+  plt.ylabel('Différence de puissance')
+  plt.title(f"Différence entre puissance calculée et puissance originelle en fonction du nombre d'itérations")
+  plt.legend()
+  plt.show()
