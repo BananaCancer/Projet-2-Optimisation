@@ -60,12 +60,12 @@ class TestMultipleSimulations:
         progDyn.extractResults(df_result, actives_turbines, result)
         return df_result
 
-    def runSimulations(self) -> None:
+    def runSimulations(self, nb_iter: int) -> None:
         for line_index in range(len(self.df_file)):
             debit_total, niveau_amont, active_turbines = self.getDataFromExcel(line_index)
 
             bb = TestBlackBox(debit_total, niveau_amont, active_turbines, 
-                    self.df_file.iloc[line_index], 1000)
+                    self.df_file.iloc[line_index], nb_iter)
             time, puissances = bb.run()
             self.results["BB"]["time_data"].append(time)
             df_result = bb.df_result

@@ -11,6 +11,6 @@ if __name__ == "__main__":
     ROW_COUNT = 100
     i = 0
     multi_sim = TestMultipleSimulations(FILENAME, STARTING_ROW, ROW_COUNT, ["BB", "ProgDyn"])
-    multi_sim.runSimulations()
+    multi_sim.runSimulations(1000)
     multi_sim.getResults()
     saveResults(multi_sim, 'data/outputbb')

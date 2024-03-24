@@ -87,7 +87,7 @@ class TestBlackBox:
         iteration_numbers = [int(x.strip()) for x in iteration_numbers_str]
         puissances = [float(puissances_str[0])]
         curr_it = 1
-        for i in range(2,1001):
+        for i in range(2,self.nb_iterations+1):
             if curr_it >= len(iteration_numbers):
                 puissances.append(puissances[-1])
             elif iteration_numbers[curr_it] == i:
