@@ -2,3 +2,4 @@
 .vscode
 __pycache__
 nomad.*.input
+nomad.*.output
